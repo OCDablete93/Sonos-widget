@@ -1,14 +1,24 @@
 // src/app/WidgetRoot.tsx
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import { wsClient } from '../websocket/ws.client';
 import { ApiClient } from '../api/client';
 
 export default function WidgetRoot() {
   const { status, login, checkStatus } = useAuthStore();
 
   useEffect(() => {
-    // 1. Check if we are logged in on mount
     checkStatus();
+    
+    // 1. Connect WebSocket only if Authenticated
+    if (status === 'AUTHENTICATED') {
+      wsClient.connect();
+    }
+    // Cleanup on unmount
+    return () => {
+      wsClient.disconnect();
+    };
+  }, [status, checkStatus]);
 
     // 2. Listen for 401 errors from the API Client
     const handleLogout = () => useAuthStore.setState({ status: 'EXPIRED' });
